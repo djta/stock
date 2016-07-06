@@ -4,15 +4,18 @@ import com.mojia.stock.TimePeriodType;
 
 import java.util.Date;
 
-/**一条K线,可能属于不同周期
+/**
+ * 一条K线,可能属于不同周期
  * Created by wangxin on 16/7/5.
  */
 public class KBarDo {
     private double close;
+    private double adjClose;
     private double open;
     private double high;
     private double low;
     private TimePeriodType timePeriodType;
+    private long volume;
 
     //顶分型的顶
     private boolean isPeakPoint;
@@ -20,6 +23,22 @@ public class KBarDo {
     private boolean isBottomPoint;
 
     private Date date;
+
+    public long getVolume() {
+        return volume;
+    }
+
+    public void setVolume(long volume) {
+        this.volume = volume;
+    }
+
+    public double getAdjClose() {
+        return adjClose;
+    }
+
+    public void setAdjClose(double adjClose) {
+        this.adjClose = adjClose;
+    }
 
     public Date getDate() {
         return date;
