@@ -2,6 +2,7 @@ package com.mojia.stock.domain;
 
 import com.mojia.stock.TimePeriodType;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -119,5 +120,20 @@ public class KBarDo {
     @Override
     public int hashCode() {
         return date != null ? date.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer(new SimpleDateFormat("MM-dd").format(date));
+        sb.append(" ");
+        sb.append("high=" + high + " ");
+        if (isPeakPoint) {
+            sb.append("顶分型 ");
+        }
+        if (isBottomPoint) {
+            sb.append("底分型 ");
+        }
+
+        return sb.toString();
     }
 }
