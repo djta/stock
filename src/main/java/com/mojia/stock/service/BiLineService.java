@@ -20,29 +20,6 @@ import java.util.List;
 @Service
 public class BiLineService {
 
-    public static void main(String[] args) {
-        List<Integer> data = new ArrayList<Integer>();
-        data.add(0);
-        data.add(1);
-        data.add(2);
-        data.add(3);
-        data.add(4);
-
-        for (int i = 0; i < data.size() - 1; i++) {
-            if (remove(i, i + 1)) {
-                data.add(i, 100);
-
-                data.remove(i + 1);
-                data.remove(i + 1);
-            }
-        }
-        System.out.println(data);
-    }
-
-    private static boolean remove(int i, int i1) {
-        return i == 2;
-    }
-
     public List<BiLineDo> parseBiLine(List<KBarDo> kBars) {
         if (CollectionUtils.isEmpty(kBars)) {
             return Collections.emptyList();
@@ -166,14 +143,38 @@ public class BiLineService {
     }
 
     private KBarDo findPossibleEndBi(KBarDo start, List<KBarDo> partingList, List<KBarDo> kBars) {
+        KBarDo current = skipToCurrent(partingList, start);
+
+        int i = partingList.indexOf(current);
+        while (i < partingList.size()) {
+            current = partingList.get(i);
+
+            if (possibleBuildChanBi(kBars, start, current)) {
+
+                if (i == partingList.size() - 1) {
+                    break;
+                }
+
+                KBarDo next = partingList.get(i + 1);
+
+                if (possibleBuildChanBi(kBars, current, next)) {
+                    return current;
+                } else {
+                    i++;
+                }
+            } else {
+                i++;
+            }
+        }
+
+        return null;
+    }
+
+    private KBarDo skipToCurrent(List<KBarDo> partingList, KBarDo start) {
         for (int i = 0; i < partingList.size(); i++) {
             KBarDo currentPartingPoint = partingList.get(i);
 
-            if (start.getDate().compareTo(currentPartingPoint.getDate()) > 0) {
-                continue;
-            }
-
-            if (possibleBuildChanBi(kBars, start, currentPartingPoint)) {
+            if (currentPartingPoint.getDate().compareTo(start.getDate()) > 0) {
                 return currentPartingPoint;
             }
         }
@@ -202,6 +203,13 @@ public class BiLineService {
         }
 
         return partingList;
+    }
+
+    private boolean canMergePartings(KBarDo current, KBarDo next, List<KBarDo> kBars) {
+        int currentIndex = kBars.indexOf(current);
+        int nextIndext = kBars.indexOf(next);
+
+        return nextIndext - currentIndex < 4;
     }
 
     //两个分型间隔是否超过5根K线
@@ -272,12 +280,54 @@ public class BiLineService {
         KBarDo next = kBarDos.get(i + 1);
 
         if (isContains(current, next)) {//Contains
-            KBarDo before = kBarDos.get(i - 1);
-            KBarDo newKBar = processContainsToNewKBar(before, current, next);
+            UpDownRelationType beforeType = UpDownRelationType.UP;
+            if (i > 0) {
+                beforeType = twoKLineRelation(kBarDos.get(i - 1), current);
+            }
+
+            KBarDo newKBar = processContainsToNewKBar(beforeType, current, next);
+            if (newKBar == null) {
+                return goFrontContainsProcess(kBarDos, i - 1);
+            }
 
             kBarDos.add(i, newKBar);
 
             kBarDos.remove(i + 1);
+            kBarDos.remove(i + 1);
+
+            int beforeIndex = i - 1;
+            while (beforeIndex > 0) {
+                if (!containsProcess(kBarDos, beforeIndex)) {
+                    break;
+                } else {
+                    beforeIndex--;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean goFrontContainsProcess(List<KBarDo> kBarDos, int i) {
+        KBarDo current = kBarDos.get(i);
+        KBarDo next = kBarDos.get(i + 1);
+
+        if (isContains(current, next)) {//Contains
+            UpDownRelationType beforeType = UpDownRelationType.UP;
+            if (i > 0) {
+                beforeType = twoKLineRelation(kBarDos.get(i - 1), current);
+            }
+
+            KBarDo newKBar = processContainsToNewKBar(beforeType, current, next);
+            if (newKBar == null) {
+                goFrontContainsProcess(kBarDos, i - 1);
+            }
+
+            kBarDos.add(i, newKBar);
+
+            kBarDos.remove(i);
             kBarDos.remove(i + 1);
 
             int beforeIndex = i - 1;
@@ -320,14 +370,10 @@ public class BiLineService {
         return UpDownRelationType.UP;
     }
 
-    private KBarDo processContainsToNewKBar(KBarDo before, KBarDo current, KBarDo next) {
-        UpDownRelationType beforeType = twoKLineRelation(before, current);
-
+    private KBarDo processContainsToNewKBar(UpDownRelationType beforeType, KBarDo current, KBarDo next) {
         if (beforeType == UpDownRelationType.UP) {
             return upDirectionProcess(current, next);
-        }
-
-        if (beforeType == UpDownRelationType.Down) {
+        } else if (beforeType == UpDownRelationType.Down) {
             return downDirectionProcess(current, next);
         }
 

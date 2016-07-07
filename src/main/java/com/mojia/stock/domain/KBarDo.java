@@ -124,7 +124,7 @@ public class KBarDo {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer(new SimpleDateFormat("MM-dd").format(date));
+        StringBuffer sb = new StringBuffer(new SimpleDateFormat("yyyyMMdd").format(date));
         sb.append(" ");
         sb.append("high=" + high + " ");
         if (isPeakPoint) {

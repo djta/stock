@@ -14,6 +14,10 @@ public class Lancher {
     public static void main(String[] args) {
         List<BiLineDo> biLineDos = new BiLineService().parseBiLine(new QuoteService().loadQuote("000002.sz"));
 
+
+
+
+
         System.out.println(biLineDos.size());
     }
 }
