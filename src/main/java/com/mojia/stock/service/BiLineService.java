@@ -7,12 +7,11 @@ import com.mojia.stock.domain.KBarDo;
 import org.apache.activemq.store.kahadaptor.IntegerMarshaller;
 import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.amqp.rabbit.config.NamespaceUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by wangxin on 16/7/5.
@@ -43,14 +42,31 @@ public class BiLineService {
         KBarDo start = kBars.get(0);
 
         while (true) {
+            //先找可能的一笔A
             KBarDo possibleLineEnd = findPossibleEndBi(start, partingList, kBars);
             if (possibleLineEnd == null) {
                 break;
             }
 
+            //再往下找可能的一笔B
             KBarDo possibleNextLineEnd = findPossibleEndBi(possibleLineEnd, partingList, kBars);
-            //从前面一笔,继续往后追溯
-            while (possibleNextLineEnd == null) {
+
+            //如果找到并且与上面一笔A反向,则
+            if (possibleNextLineEnd != null) {
+                KBarDo bestBi = reallyConfirmBi(start, possibleLineEnd, possibleNextLineEnd, partingList, kBars);
+
+                if (bestBi != null) {
+                    possibleLineEnd = bestBi;
+
+                    biLines.add(buildChanBi(start, possibleLineEnd, kBars));
+                    start = possibleLineEnd;
+                    continue;
+                }
+            }
+
+            //否则从前面一笔,继续往后找
+            while (true) {
+                //跳过possibleLineEnd,继续往前找
                 possibleLineEnd = continueFindPossibleEndBi(start, possibleLineEnd, partingList, kBars);
 
                 if (possibleLineEnd == null) {
@@ -62,21 +78,92 @@ public class BiLineService {
                 }
 
                 possibleNextLineEnd = findPossibleEndBi(possibleLineEnd, partingList, kBars);
-            }
-
-            while (isOneDirection(possibleLineEnd, possibleNextLineEnd)) {
-                possibleNextLineEnd = findPossibleEndBi(possibleNextLineEnd, partingList, kBars);
                 if (possibleNextLineEnd == null) {
+                    continue;
+                }
+
+                KBarDo bestBi = reallyConfirmBi(start,
+                        possibleLineEnd, possibleNextLineEnd, partingList, kBars);
+
+                if (bestBi != null) {
+                    possibleLineEnd = bestBi;
+
+                    biLines.add(buildChanBi(start, possibleLineEnd, kBars));
+                    start = possibleLineEnd;
                     break;
                 }
             }
-
-            biLines.add(buildChanBi(start, possibleLineEnd, kBars));
-
-            start = possibleLineEnd;
         }
 
         return biLines;
+    }
+
+    private KBarDo reallyConfirmBi(KBarDo start, KBarDo possibleLineEnd, KBarDo possibleNextLineEnd, List<KBarDo> partingList, List<KBarDo> kBars) {
+        if ((possibleNextLineEnd != null) && (!isOneDirection(possibleLineEnd, possibleNextLineEnd))) {
+            List<KBarDo> allDirectionBiEnd = findAllOneDirectionBiEnd(start, possibleLineEnd, possibleNextLineEnd, partingList, kBars);
+
+            return pickBest(possibleLineEnd, allDirectionBiEnd);
+        }
+
+        return possibleLineEnd;
+    }
+
+    private KBarDo pickBest(KBarDo possibleLineEnd, List<KBarDo> allDirectionBiEnd) {
+        double min = Double.MAX_VALUE;
+        double max = Double.MIN_VALUE;
+        KBarDo upBest = null;
+        KBarDo bottomBest = null;
+
+        for (KBarDo each : allDirectionBiEnd) {
+            if (each.getHigh() > max) {
+                max = each.getHigh();
+
+                if (possibleLineEnd.isPeakPoint()) {
+                    upBest = each;
+                }
+            }
+
+            if (each.getLow() < min) {
+                min = each.getLow();
+
+                if (possibleLineEnd.isBottomPoint()) {
+                    bottomBest = each;
+                }
+            }
+        }
+
+        if (possibleLineEnd.isPeakPoint()) {
+            return upBest;
+        }
+
+        if (possibleLineEnd.isBottomPoint()) {
+            return bottomBest;
+        }
+
+        return null;
+    }
+
+    private List<KBarDo> findAllOneDirectionBiEnd(KBarDo start,
+                                                  KBarDo possibleLineEnd,
+                                                  KBarDo end,
+                                                  List<KBarDo> partingList, List<KBarDo> kBars) {
+        Set<KBarDo> set = new HashSet<KBarDo>();
+        set.add(possibleLineEnd);
+
+        int index = partingList.indexOf(end);
+        for (KBarDo each : partingList) {
+
+            if ((each.getDate().compareTo(start.getDate()) > 0) && (each.getDate().compareTo(end.getDate()) < 0)) {
+
+                KBarDo newBi = continueFindPossibleEndBi(start, each, partingList.subList(0, index + 1), kBars);
+
+                if (newBi != null && isOneDirection(possibleLineEnd, newBi)) {
+                    set.add(newBi);
+                }
+            }
+        }
+
+        return new ArrayList<KBarDo>(set);
     }
 
     //continue find a new chan bi line
@@ -144,24 +231,16 @@ public class BiLineService {
 
     private KBarDo findPossibleEndBi(KBarDo start, List<KBarDo> partingList, List<KBarDo> kBars) {
         KBarDo current = skipToCurrent(partingList, start);
+        if (current == null) {
+            return null;
+        }
 
         int i = partingList.indexOf(current);
         while (i < partingList.size()) {
             current = partingList.get(i);
 
             if (possibleBuildChanBi(kBars, start, current)) {
-
-                if (i == partingList.size() - 1) {
-                    break;
-                }
-
-                KBarDo next = partingList.get(i + 1);
-
-                if (possibleBuildChanBi(kBars, current, next)) {
-                    return current;
-                } else {
-                    i++;
-                }
+                return current;
             } else {
                 i++;
             }
