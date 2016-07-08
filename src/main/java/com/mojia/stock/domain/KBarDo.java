@@ -10,6 +10,7 @@ import java.util.Date;
  * Created by wangxin on 16/7/5.
  */
 public class KBarDo {
+    private String symbol;
     private double close;
     private double adjClose;
     private double open;
@@ -24,6 +25,14 @@ public class KBarDo {
     private boolean isBottomPoint;
 
     private Date date;
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
 
     public long getVolume() {
         return volume;

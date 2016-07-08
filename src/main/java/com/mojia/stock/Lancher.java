@@ -16,8 +16,6 @@ public class Lancher {
 
 
 
-
-
         System.out.println(biLineDos.size());
     }
 }
