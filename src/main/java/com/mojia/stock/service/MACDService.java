@@ -21,19 +21,32 @@ public class MACDService {
     private static final double aSlow = 2.0 / 27;
 
 
+    public List<MacdDo> macd(String symbol, TimePeriodType dayperiodtype) {
+        
+        
+        
+        return null;
+    }
+    
+    
     public MacdDo macd(String symbol, TimePeriodType type, Date date) {
-        Date fastDate = new Date(beforeTime(type, 12));
-        Date slowDate = new Date(beforeTime(type,26));
-        Date midDate = new Date(beforeTime(type,9));
+        Date fastDate = new Date(beforeTime(type, shortValue));
+        Date slowDate = new Date(beforeTime(type, longValue));
+        Date midDate = new Date(beforeTime(type, midValue));
 
         List<KBarDo> fastkBarDos = quoteService.loadQuote(symbol, fastDate);
-        List<KBarDo> slowKBarDos = quoteService.loadQuote(symbol,slowDate);
-        List<KBarDo> midKBarDos = quoteService.loadQuote(symbol,midDate);
+        List<KBarDo> slowKBarDos = quoteService.loadQuote(symbol, slowDate);
+        List<KBarDo> midKBarDos = quoteService.loadQuote(symbol, midDate);
 
 
-        double dif = ema(fastkBarDos,aFast) - ema(slowKBarDos, aSlow);
-        double dea = ema(midKBarDos,)
+        double dif = ema(fastkBarDos, aFast) - ema(slowKBarDos, aSlow);
+        double dea = ema(midKBarDos, 0);
 
+
+        MacdDo macdDo = new MacdDo();
+        
+
+        return macdDo;
     }
 
     private long beforeTime(TimePeriodType type, int count) {
@@ -70,4 +83,5 @@ public class MACDService {
     public void setQuoteService(QuoteService quoteService) {
         this.quoteService = quoteService;
     }
+
 }

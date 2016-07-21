@@ -1,3 +1,8 @@
 .idea/
 stock.trade.iml
 target/
+.classpath
+.project
+.settings/
+bin/
+
