@@ -1,6 +1,6 @@
 package com.mojia.stock.domain;
 
-import com.mojia.stock.TimePeriodType;
+import com.mojia.stock.common.TimePeriodType;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

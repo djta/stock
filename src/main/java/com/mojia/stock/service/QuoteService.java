@@ -1,6 +1,6 @@
 package com.mojia.stock.service;
 
-import com.mojia.stock.TimePeriodType;
+import com.mojia.stock.common.TimePeriodType;
 import com.mojia.stock.domain.KBarDo;
 import org.springframework.stereotype.Service;
 
@@ -9,7 +9,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -26,33 +26,6 @@ public class QuoteService {
 
     private void test() {
         loadQuote("000001.sz");
-    }
-
-    public List<KBarDo> loadQuote(String symbol) {
-        List<KBarDo> kBarDos = new ArrayList<KBarDo>();
-
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(new File(dir + symbol + ".csv")));
-            String line = "";
-
-            KBarDo lastKBarDo = null;
-            while ((line = reader.readLine()) != null) {
-                KBarDo kBarDo = parseKLine(line);
-
-                if (kBarDo != null && notTheSame(lastKBarDo, kBarDo)) {
-                    kBarDos.add(kBarDo);
-                    lastKBarDo = kBarDo;
-                }
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        Collections.reverse(kBarDos);
-
-        return kBarDos;
     }
 
     private boolean notTheSame(KBarDo lastKBarDo, KBarDo kBarDo) {
@@ -89,4 +62,41 @@ public class QuoteService {
 
         return null;
     }
+
+    public List<KBarDo> loadQuote(String symbol, Date afterDate) {
+        List<KBarDo> kBarDos = new ArrayList<KBarDo>();
+
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(new File(dir + symbol + ".csv")));
+            String line = "";
+
+            KBarDo lastKBarDo = null;
+            while ((line = reader.readLine()) != null) {
+                KBarDo kBarDo = parseKLine(line);
+
+                if (kBarDo != null &&
+                        (kBarDo.getDate().compareTo(afterDate) > 0) &&
+                        notTheSame(lastKBarDo, kBarDo)) {
+                    kBarDos.add(kBarDo);
+                    lastKBarDo = kBarDo;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Collections.reverse(kBarDos);
+
+        return kBarDos;
+    }
+
+    public List<KBarDo> loadQuote(String symbol) {
+        Date afterDate = new Date();
+        afterDate.setTime(0);
+
+        return loadQuote(symbol, afterDate);
+    }
+
 }

@@ -1,16 +1,11 @@
 package com.mojia.stock.service;
 
-import com.mojia.stock.TimePeriodType;
 import com.mojia.stock.UpDownRelationType;
 import com.mojia.stock.domain.BiLineDo;
 import com.mojia.stock.domain.KBarDo;
-import org.apache.activemq.store.kahadaptor.IntegerMarshaller;
-import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.amqp.rabbit.config.NamespaceUtils;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.*;
 
 /**

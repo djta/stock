@@ -1,4 +1,4 @@
-package com.mojia.stock;
+package com.mojia.stock.common;
 
 /**
  * Created by wangxin on 16/7/5.

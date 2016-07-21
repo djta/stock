@@ -1,6 +1,6 @@
 package com.mojia.stock.service;
 
-import com.mojia.stock.TimePeriodType;
+import com.mojia.stock.common.TimePeriodType;
 import com.mojia.stock.domain.KBarDo;
 import org.springframework.stereotype.Service;
 
